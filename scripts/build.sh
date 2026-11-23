@@ -127,10 +127,11 @@ build_kernel() {
 	# 4.9 arch/arm64 forces -no-integrated-as under clang; use the NDK gcc instead
 	# CROSS_COMPILE lives inside GCC_64 as "CROSS_COMPILE=/path/prefix-" (set -u: guard it)
 	# 4.9 on modern hosts: system GNU cross gcc is the reliable path (see xiziya)
-	local cc="${CC_OVERRIDE:-aarch64-linux-gnu-gcc}" args
+	# NDK gcc ships its own as; avoids the clang/as mismatch entirely
+	local cc="${GCC_64:+${GCC_64#CROSS_COMPILE=}}gcc" args
 	args=$(make_args)
 	if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
-		cc="ccache ${CC_OVERRIDE:-aarch64-linux-gnu-gcc}"
+		cc="ccache ${GCC_64:+${GCC_64#CROSS_COMPILE=}}gcc"
 		export CCACHE_DIR="${CCACHE_DIR:-${WORKSPACE}/.ccache}"
 		info "ccache enabled (dir: ${CCACHE_DIR})"
 	fi
