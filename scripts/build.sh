@@ -125,10 +125,11 @@ build_kernel() {
 
 	# 4.9 Makefile ignores CLANG_TRIPLE; clang must be told the target explicitly
 	# 4.9 arch/arm64 forces -no-integrated-as under clang; use the NDK gcc instead
-	local cc="${CROSS_COMPILE}gcc" args
+	# CROSS_COMPILE lives inside GCC_64 as "CROSS_COMPILE=/path/prefix-" (set -u: guard it)
+	local cc="${GCC_64:+${GCC_64#CROSS_COMPILE=}}gcc" args
 	args=$(make_args)
 	if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
-		cc="ccache ${CROSS_COMPILE}gcc"
+		cc="ccache ${GCC_64:+${GCC_64#CROSS_COMPILE=}}gcc"
 		export CCACHE_DIR="${CCACHE_DIR:-${WORKSPACE}/.ccache}"
 		info "ccache enabled (dir: ${CCACHE_DIR})"
 	fi
