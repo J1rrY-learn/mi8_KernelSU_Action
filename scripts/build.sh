@@ -124,10 +124,11 @@ build_kernel() {
 	fi
 
 	# 4.9 Makefile ignores CLANG_TRIPLE; clang must be told the target explicitly
-	local cc="clang --target=aarch64-linux-gnu" args
+	# 4.9 arch/arm64 forces -no-integrated-as under clang; use the NDK gcc instead
+	local cc="${CROSS_COMPILE}gcc" args
 	args=$(make_args)
 	if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
-		cc="ccache clang --target=aarch64-linux-gnu"
+		cc="ccache ${CROSS_COMPILE}gcc"
 		export CCACHE_DIR="${CCACHE_DIR:-${WORKSPACE}/.ccache}"
 		info "ccache enabled (dir: ${CCACHE_DIR})"
 	fi
