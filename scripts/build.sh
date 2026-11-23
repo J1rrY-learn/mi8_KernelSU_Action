@@ -123,10 +123,11 @@ build_kernel() {
 		info "using custom manager signature (size=${KSU_EXPECTED_SIZE})"
 	fi
 
-	local cc="clang" args
+	# 4.9 Makefile ignores CLANG_TRIPLE; clang must be told the target explicitly
+	local cc="clang --target=aarch64-linux-gnu" args
 	args=$(make_args)
 	if is_true "${ENABLE_CCACHE:-true}" && command -v ccache >/dev/null; then
-		cc="ccache clang"
+		cc="ccache clang --target=aarch64-linux-gnu"
 		export CCACHE_DIR="${CCACHE_DIR:-${WORKSPACE}/.ccache}"
 		info "ccache enabled (dir: ${CCACHE_DIR})"
 	fi
