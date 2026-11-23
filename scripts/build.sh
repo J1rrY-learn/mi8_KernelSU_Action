@@ -117,6 +117,15 @@ build_kernel() {
 	# Kbuild own the name from this point on.
 	unset DISABLE_LTO
 
+	# Host tools are compiled with the runner's system gcc, and current runner
+	# images default that to -std=gnu23, where "constexpr" is a keyword.  Linux's
+	# scripts/unifdef.c still declares "bool constexpr", so the tree dies in
+	# __headers before a single kernel object is built.  Kernel C files are
+	# pinned to -std=gnu89 by kbuild; host tools are not, so pin them here.
+	# GCC 14+ also promotes some formerly-warning diagnostics to hard errors.
+	export HOSTCFLAGS="-std=gnu17 -fcommon -Wno-error=implicit-function-declaration -Wno-error=incompatible-pointer-types -Wno-error=int-conversion ${HOSTCFLAGS:-}"
+	info "host cc: $(gcc --version 2>/dev/null | head -1)"
+
 	# Custom manager signature, when the user builds their own manager APK.
 	if [ -n "${KSU_EXPECTED_SIZE:-}" ] && [ -n "${KSU_EXPECTED_HASH:-}" ]; then
 		export KSU_EXPECTED_SIZE KSU_EXPECTED_HASH
@@ -147,6 +156,12 @@ build_kernel() {
 	fi
 
 	cd "$KERNEL_DIR"
+
+	# Belt-and-braces for the same problem: rename the identifier so even a
+	# Makefile layer that overrides our -std cannot reintroduce the error.
+	if [ -f scripts/unifdef.c ]; then
+		sed -i 's/\bconstexpr\b/const_expr/g' scripts/unifdef.c
+	fi
 	info "make ${args} ${KERNEL_CONFIG}"
 	# shellcheck disable=SC2086
 	make -j"$(nproc --all)" CC="$cc" $args "${KERNEL_CONFIG}" \
