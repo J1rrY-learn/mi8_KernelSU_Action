@@ -115,6 +115,21 @@ ksu_install() {
 		warn "Pin KSU_REF (e.g. a tag) if you need reproducible builds."
 	fi
 
+	# setup.sh hardcodes a self-hosted GitLab URL (git.zako.shirkneko.top:20004)
+	# that CI runners cannot reach, so its clone hangs forever.  Pre-clone from
+	# the GitHub repo we already validated; setup.sh's own "test -d || clone"
+	# then skips the network entirely.
+	if [ ! -d "${KERNEL_DIR}/${dir}" ]; then
+		info "pre-cloning ${repo}${ref:+ (ref: ${ref})} into ${dir}"
+		if [ -n "$ref" ]; then
+			git clone --depth 1 -b "$ref" "$repo" "${KERNEL_DIR}/${dir}" \
+				|| die "pre-clone of ${repo} (ref ${ref}) failed"
+		else
+			git clone --depth 1 "$repo" "${KERNEL_DIR}/${dir}" \
+				|| die "pre-clone of ${repo} failed"
+		fi
+	fi
+
 	# Run the variant's own installer.
 	local setup_url="https://raw.githubusercontent.com/${repo#https://github.com/}/${setup_ref}/kernel/setup.sh"
 	info "running ${setup_url}"
